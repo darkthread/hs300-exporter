@@ -16,6 +16,8 @@ var host = configuration["DeviceIP"] ?? throw new ArgumentNullException("DeviceI
 var metricServer = new MetricServer(port: 9999); // 指定 Exposure Port
 metricServer.Start();
 
+Metrics.SuppressDefaultMetrics(); // 停用預設指標
+
 // 建立自訂指標
 var myGauge = Metrics.CreateGauge("hs300_stats", "HS300 插座電流量", new GaugeConfiguration
 {
