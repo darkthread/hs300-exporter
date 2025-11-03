@@ -24,7 +24,7 @@ WORKDIR /app
 # 複製建置輸出
 COPY --from=build /app/publish .
 
-# 暴露 Prometheus metrics port
+# 宣告使用 Port (Metadata 性質，不影響編譯或執行)
 EXPOSE 9999
 
 # 執行應用程式
@@ -32,4 +32,6 @@ ENTRYPOINT ["dotnet", "hs300-exporter.dll"]
 
 # 建置與執行
 # docker build -t hs300-exporter .
+# docker save -o hs300-exporter.tar hs300-exporter
+# scp .\hs300-exporter.tar user@remotehost:/path/to/
 # docker run -d -p 9999:9999 --name hs300-exporter hs300-exporter

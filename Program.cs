@@ -1,17 +1,9 @@
 ﻿using Prometheus;
 using System.Diagnostics;
 using TPLinkSmartDevices.Devices;
-using Microsoft.Extensions.Configuration;
-using System.Dynamic;
-
-// 建立設定系統 (優先順序: CLI 參數 > 環境變數 > 預設值)
-var configuration = new ConfigurationBuilder()
-    .AddEnvironmentVariables(prefix: "HS300_") // 使用 HS300_ 前綴的環境變數
-    .AddCommandLine(args) // CLI 參數
-    .Build();
 
 // 讀取設定，提供預設值
-var host = configuration["DeviceIP"] ?? throw new ArgumentNullException("DeviceIP", "請提供 HS300 裝置的 IP 位址");
+var host = Environment.GetEnvironmentVariable("HS300_DeviceIP") ?? throw new ArgumentNullException("HS300_DeviceIP", "請提供 HS300 裝置的 IP 位址");
 
 var metricServer = new MetricServer(port: 9999); // 指定 Exposure Port
 metricServer.Start();
@@ -19,7 +11,7 @@ metricServer.Start();
 Metrics.SuppressDefaultMetrics(); // 停用預設指標
 
 // 建立自訂指標
-var myGauge = Metrics.CreateGauge("hs300_stats", "HS300 插座電流量", new GaugeConfiguration
+var myGauge = Metrics.CreateGauge("hs300_stats", "HS300 插座耗電量(w)", new GaugeConfiguration
 {
     LabelNames = new[] { "type" }
 });
@@ -54,6 +46,3 @@ await Task.Run(async () =>
         await Task.Delay(TimeSpan.FromMilliseconds(waitMs));
     }
 });
-
-// 等待外部結束程式
-// metricServer.Stop();
