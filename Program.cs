@@ -23,26 +23,27 @@ await Task.Run(async () =>
     while (true)
     {
         double[] data = new double[6];
-        long waitMs = 10_000;
         try
         {
-            Console.Write(DateTime.Now.ToString("MM-dd HH:mm:ss "));
-            var sw = Stopwatch.StartNew();
-            var hs300 = new TPLinkSmartStrip(host);
-            for (int i = 0; i < 6; i++)
+            if (DateTime.Now.Second % 10 == 0)
             {
-                var powerData = hs300.ReadRealtimePowerData(i + 1);
-                data[i] = powerData.Power;
-                myGauge.WithLabels($"插座{i + 1}").Set(powerData.Power);
+                Console.Write(DateTime.Now.ToString("MM-dd HH:mm:ss "));
+                var sw = Stopwatch.StartNew();
+                var hs300 = new TPLinkSmartStrip(host);
+                for (int i = 0; i < 6; i++)
+                {
+                    var powerData = hs300.ReadRealtimePowerData(i + 1);
+                    data[i] = powerData.Power;
+                    myGauge.WithLabels($"插座{i + 1}").Set(powerData.Power);
+                }
+                sw.Stop();
+                Console.WriteLine($"Read data: {string.Join(",", data)} ({sw.ElapsedMilliseconds:n0}ms)");
             }
-            sw.Stop();
-            waitMs = Math.Max(waitMs - (int)sw.ElapsedMilliseconds, 0);
-            Console.WriteLine($"Read data: {string.Join(",", data)} ({sw.ElapsedMilliseconds:n0}ms)");
         }
         catch (Exception ex)
         {
             Console.WriteLine($"錯誤: {ex.Message}");
         }
-        await Task.Delay(TimeSpan.FromMilliseconds(waitMs));
+        await Task.Delay(TimeSpan.FromSeconds(1));
     }
 });
