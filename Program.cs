@@ -28,17 +28,33 @@ await Task.Run(async () =>
             if (DateTime.Now.Second % 10 == 0)
             {
                 Console.Write(DateTime.Now.ToString("MM-dd HH:mm:ss "));
+                Console.Out.Flush();
+
                 var sw = Stopwatch.StartNew();
-                var hs300 = new TPLinkSmartStrip(host);
-                for (int i = 0; i < 6; i++)
+                
+                // 設定 30 秒逾時
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                var readTask = Task.Run(() =>
                 {
-                    var powerData = hs300.ReadRealtimePowerData(i + 1);
-                    data[i] = powerData.Power;
-                    myGauge.WithLabels($"插座{i + 1}").Set(powerData.Power);
-                }
+                    var hs300 = new TPLinkSmartStrip(host);
+                    for (int i = 0; i < 6; i++)
+                    {
+                        cts.Token.ThrowIfCancellationRequested();
+                        var powerData = hs300.ReadRealtimePowerData(i + 1);
+                        data[i] = powerData.Power;
+                        myGauge.WithLabels($"插座{i + 1}").Set(powerData.Power);
+                    }
+                }, cts.Token);
+
+                await readTask.WaitAsync(cts.Token);
+                
                 sw.Stop();
                 Console.WriteLine($"Read data: {string.Join(",", data)} ({sw.ElapsedMilliseconds:n0}ms)");
             }
+        }
+        catch (OperationCanceledException)
+        {
+            Console.WriteLine("錯誤: 讀取逾時");
         }
         catch (Exception ex)
         {
