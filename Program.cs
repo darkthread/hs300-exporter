@@ -19,7 +19,6 @@ var myGauge = Metrics.CreateGauge("hs300_stats", "HS300 插座耗電量(w)", new
 // 以背景執行方式更新指標
 await Task.Run(async () =>
 {
-    var rand = new Random();
     while (true)
     {
         double[] data = new double[6];
@@ -32,20 +31,20 @@ await Task.Run(async () =>
 
                 var sw = Stopwatch.StartNew();
                 
-                // 設定 30 秒逾時
+                // 設定 30 秒自動取消
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
                 var readTask = Task.Run(() =>
                 {
                     var hs300 = new TPLinkSmartStrip(host);
                     for (int i = 0; i < 6; i++)
                     {
-                        cts.Token.ThrowIfCancellationRequested();
+                        cts.Token.ThrowIfCancellationRequested(); // 若已逾時則拋出例外
                         var powerData = hs300.ReadRealtimePowerData(i + 1);
                         data[i] = powerData.Power;
                         myGauge.WithLabels($"插座{i + 1}").Set(powerData.Power);
                     }
                 }, cts.Token);
-
+                // 等待執行結束或逾時
                 await readTask.WaitAsync(cts.Token);
                 
                 sw.Stop();

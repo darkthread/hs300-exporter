@@ -21,6 +21,17 @@ RUN dotnet publish -c Release -o /app/publish \
 FROM mcr.microsoft.com/dotnet/runtime:9.0
 WORKDIR /app
 
+# 切換到 root 使用者以便安裝套件
+USER root
+
+# 使用 apt-get 安裝需要套件
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends procps && \
+    rm -rf /var/lib/apt/lists/* # 清理暫存檔以減少映像檔大小
+
+# 切換為非 root 使用者執行應用程式，提高安全性
+USER app
+
 # 複製建置輸出
 COPY --from=build /app/publish .
 
